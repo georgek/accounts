@@ -4,7 +4,6 @@ import sys
 import argparse
 import csv
 import iterfzf
-from termcolor import colored
 
 import numpy as np
 
@@ -94,12 +93,12 @@ def main(payee_file: Iterable[str]) -> None:
     for payee in payee_test:
         predicted = text_clf.predict([payee])
         predicted_account = accounts[predicted[0]]
-        sys.stdout.write(colored(f"{payee}\n", "yellow"))
         typed, selected = iterfzf.iterfzf(sorted(account_bits,
                                                  key=ac.account_nlevels),
                                           query=predicted_account,
                                           case_sensitive=False,
-                                          multi=False, print_query=True)
+                                          multi=False, print_query=True,
+                                          prompt=f"{payee} : ")
         if typed is None and selected is None:
             # user quit
             break
