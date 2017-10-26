@@ -4,6 +4,7 @@ import sys
 import argparse
 import csv
 import iterfzf
+from termcolor import colored
 
 import numpy as np
 
@@ -89,18 +90,29 @@ def main(payee_file: Iterable[str]) -> None:
 
     text_clf.fit(payee_train, accids_train)
 
+    account_bits = ac.account_bits(accounts)
     for payee in payee_test:
         predicted = text_clf.predict([payee])
         predicted_account = accounts[predicted[0]]
-        print(payee)
-        typed, selected = iterfzf.iterfzf(sorted(accounts,
+        sys.stdout.write(colored(f"{payee}\n", "yellow"))
+        typed, selected = iterfzf.iterfzf(sorted(account_bits,
                                                  key=ac.account_nlevels),
                                           query=predicted_account,
                                           case_sensitive=False,
                                           multi=False, print_query=True)
-        if selected is None:
+        if typed is None and selected is None:
+            # user quit
             break
-        print(selected)
+        elif selected is None:
+            # a new account is typed
+            sys.stdout.write(f"{typed}\n")
+        elif selected[-1] == ":":
+            # a partial account is typed
+            account_end = input(selected)
+            sys.stdout.write(f"{selected}{account_end}\n")
+        else:
+            # an existing account is selected
+            sys.stdout.write(f"{selected}\n")
 
 
 if __name__ == '__main__':
