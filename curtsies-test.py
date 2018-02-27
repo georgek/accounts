@@ -70,19 +70,31 @@ class Editor():
             self.typed = deque(lst[:self.cursor] + yanked + lst[self.cursor:])
             self.cursor += len(yanked)
         elif key == "<Esc+b>":
-            try:
-                # position of cursor in reverse list
-                c = len(self.typed) - self.cursor
-                p = list(reversed(self.typed)).index(" ", c+1)
-                self.cursor = len(self.typed) - p
-            except ValueError:
-                self.cursor = 0
+            self.cursor = self.find_backwards(" ")
         elif key == "<Esc+f>":
-            try:
-                p = list(self.typed).index(" ", self.cursor+1)
-                self.cursor = p
-            except ValueError:
-                self.cursor = len(self.typed)
+            self.cursor = self.find_forwards(" ")
+        elif key in ["<Ctrl-BACKSPACE>", "<Esc+BACKSPACE>"]:
+            p = self.find_backwards(" ")
+            lst = list(self.typed)
+            self.typed = deque(lst[:p] + lst[self.cursor:])
+            self.killring.append(lst[p:self.cursor])
+            self.cursor = p
+
+    def find_forwards(self, char):
+        try:
+            p = list(self.typed).index(char, self.cursor+1)
+            return p
+        except ValueError:
+            return len(self.typed)
+
+    def find_backwards(self, char):
+        try:
+            # position of cursor in reverse list
+            c = len(self.typed) - self.cursor
+            p = list(reversed(self.typed)).index(char, c+1)
+            return len(self.typed) - p
+        except ValueError:
+            return 0
 
     def to_fsarray(self, width, prompt, tail=""):
         string = prompt + "".join(self.typed) + tail
@@ -118,7 +130,7 @@ def get_input(history=[], prompt=""):
 def main():
     history = deque([], HISTORY_SIZE)
     while True:
-        typed = get_input(history, "Type your shit here: ")
+        typed = get_input(history, "Input: ")
         if typed:
             history.appendleft(typed)
             print(typed)
