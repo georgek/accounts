@@ -83,17 +83,18 @@ class Editor():
             self.typed = deque(lst[:self.cursor] + yanked + lst[self.cursor:])
             self.cursor += len(yanked)
         elif key == "<Esc+b>":
-            self.cursor = self.find_backwards(" ")
+            self.cursor = self.backward_word()
         elif key == "<Esc+f>":
-            self.cursor = self.find_forwards(" ")
+            self.cursor = self.forward_word()
         elif key in ["<Ctrl-BACKSPACE>", "<Esc+BACKSPACE>"]:
-            p = self.find_backwards(" ")
+            p = self.backward_word()
             lst = list(self.typed)
             self.typed = deque(lst[:p] + lst[self.cursor:])
             self.killring.append(lst[p:self.cursor])
             self.cursor = p
 
     def find_forwards(self, char):
+        """Finds next character in forward direction, or end."""
         try:
             p = list(self.typed).index(char, self.cursor+1)
             return p
@@ -101,12 +102,29 @@ class Editor():
             return len(self.typed)
 
     def find_backwards(self, char):
+        """Finds next character in backward direction, or start."""
         try:
             # position of cursor in reverse list
             c = len(self.typed) - self.cursor
             p = list(reversed(self.typed)).index(char, c+1)
             return len(self.typed) - p
         except ValueError:
+            return 0
+
+    def forward_word(self):
+        """Finds next position forwards of a non-alphabetic character."""
+        for i in range(self.cursor+1, len(self.typed)):
+            if not self.typed[i].isalpha():
+                return i
+        else:
+            return len(self.typed)
+
+    def backward_word(self):
+        """Finds next position backwards of a non-alphabetic character."""
+        for i in range(self.cursor-2, -1, -1):
+            if not self.typed[i].isalpha():
+                return i+1
+        else:
             return 0
 
     def to_fsarray(self, width, prompt, tail=""):
@@ -129,7 +147,8 @@ class Editor():
 
 def narrow(typed, completions):
     """Returns narrowed list of completions based on typed."""
-    completions = sorted(s for s in completions if s.startswith(typed))
+    completions = sorted(s for s in completions
+                         if s.lower().startswith(typed.lower()))
     return completions
 
 
@@ -142,12 +161,11 @@ def complete(strings):
 
 
 def completion_string(completions):
-    string = ", ".join(completions)
-    return f" <{string}>"
+    string = " | ".join(completions)
+    return f"{{{string}}}"
 
 
-def get_input(prompt="", completions=[], separator="/",
-              forbidden=[], history=[]):
+def get_input(prompt="", completions=[], forbidden=[], history=[]):
     with CursorAwareWindow(hide_cursor=False) as win:
         with Input(keynames="curtsies") as input_generator:
             editor = Editor(initial_string="",
@@ -177,8 +195,7 @@ def main():
     history = deque([], HISTORY_SIZE)
     while True:
         typed = get_input(prompt="Input: ",
-                          completions=["this", "that", "account", "name"],
-                          separator="/",
+                          completions=["Assets:Bank", "Assets:OtherBank", "Income:Salary"],
                           forbidden=[" "],
                           history=history)
         if typed:
