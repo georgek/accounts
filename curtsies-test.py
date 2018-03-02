@@ -44,11 +44,11 @@ class Editor():
                     self.cursor = len(self.typed)
         elif key == "<Ctrl-a>":
             self.cursor = 0
-        elif key == "<Ctrl-b>":
+        elif key in ["<Ctrl-b>", "<LEFT>"]:
             self.cursor = max(0, self.cursor-1)
         elif key == "<Ctrl-e>":
             self.cursor = len(self.typed)
-        elif key == "<Ctrl-f>":
+        elif key in ["<Ctrl-f>", "<RIGHT>"]:
             self.cursor = min(len(self.typed), self.cursor+1)
         elif key in ["<Ctrl-h>", "<BACKSPACE>"]:
             if self.cursor > 0:
