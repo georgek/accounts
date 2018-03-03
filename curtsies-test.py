@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from pathlib import Path
 import itertools
 from collections import deque
 
@@ -206,10 +207,10 @@ def get_input(prompt="", completions=[], forbidden=[], history=[]):
 
 def main():
     history = deque([], HISTORY_SIZE)
+    dir_contents = [str(p) for p in Path(".").iterdir()]
     while True:
         typed = get_input(prompt="Input: ",
-                          completions=["Assets:Bank", "Assets:OtherBank", "Income:Salary"],
-                          forbidden=[" "],
+                          completions=dir_contents,
                           history=history)
         if typed:
             history.appendleft(typed)
