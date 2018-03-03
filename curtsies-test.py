@@ -4,7 +4,8 @@ from pathlib import Path
 import itertools
 from collections import deque
 
-from curtsies import Input, CursorAwareWindow, fsarray
+from curtsies import Input, CursorAwareWindow, fsarray, fmtstr
+from curtsies.fmtfuncs import yellow, bold
 
 HISTORY_SIZE = 10
 
@@ -129,7 +130,7 @@ class Editor():
             return 0
 
     def to_fsarray(self, width, prompt, tail=""):
-        string = prompt + "".join(self.typed) + tail
+        string = yellow(prompt) + fmtstr("".join(self.typed)) + tail
         chunks = [string[i:i+width] for i in range(0, len(string), width)]
         return fsarray(chunks)
 
@@ -174,9 +175,12 @@ def complete(strings):
     return string
 
 
-def completion_string(completions):
-    string = " | ".join(completions)
-    return f"{{{string}}}"
+def completion_string(completions, current=0):
+    completions = [fmtstr(c) for c in completions]
+    if current < len(completions):
+        completions[current] = yellow(bold(completions[current]))
+    string = fmtstr(" | ").join(completions)
+    return fmtstr("{") + string + fmtstr("}")
 
 
 def get_input(prompt="", completions=[], forbidden=[], history=[]):
