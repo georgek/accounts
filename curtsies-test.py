@@ -145,10 +145,23 @@ class Editor():
         win.render_to_terminal(fsa, cur)
 
 
+def fuzzy_sort_key(typed, match):
+    """Returns a tuple where the first item is the match type and second is the
+matched string."""
+    if match == typed:
+        match_type = 0
+    elif match.startswith(typed):
+        match_type = 1
+    else:
+        match_type = 2
+    return (match_type, match)
+
+
 def narrow(typed, completions):
     """Returns narrowed list of completions based on typed."""
-    completions = sorted(s for s in completions
-                         if s.lower().startswith(typed.lower()))
+    completions = sorted([s for s in completions
+                          if typed.lower() in s.lower()],
+                         key=lambda s: fuzzy_sort_key(typed, s))
     return completions
 
 
