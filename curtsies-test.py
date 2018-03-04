@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import itertools
-from collections import deque
+from collections import deque, defaultdict
 
 from curtsies import Input, CursorAwareWindow, fsarray, fmtstr
 from curtsies.fmtfuncs import yellow, bold
@@ -181,6 +181,21 @@ def completion_string(completions, current=0):
         completions[current] = yellow(bold(completions[current]))
     string = fmtstr(" | ").join(completions)
     return fmtstr("{") + string + fmtstr("}")
+
+
+def recursive_defaultdict():
+    return defaultdict(recursive_defaultdict)
+
+
+def make_hierarchy(strings, separator):
+    """Splits the strings by the separator and returns nested dicts."""
+    tree = defaultdict(recursive_defaultdict)
+    for string in strings:
+        segments = string.split(separator)
+        current_dict = tree
+        for segment in segments:
+            current_dict = current_dict[segment]
+    return tree
 
 
 def get_input(prompt="", completions=[], forbidden=[], history=[]):
