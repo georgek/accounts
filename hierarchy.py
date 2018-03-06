@@ -10,7 +10,7 @@ class Hierarchy(metaclass=ABCMeta):
         return self._separator
 
     @abstractmethod
-    def get_subtree(self, path):
+    def get_subtree(self, path=[]):
         pass
 
 
@@ -33,7 +33,7 @@ class StringHierarchy(Hierarchy):
     def separator(self):
         return self._separator
 
-    def get_subtree(self, path):
+    def get_subtree(self, path=[]):
         current_dict = self.tree
         for item in path:
             current_dict = current_dict[item]
@@ -46,7 +46,7 @@ class DirectoryHierarchy(Hierarchy):
         self.root = Path(location)
         self._separator = "/"
 
-    def get_subtree(self, path):
+    def get_subtree(self, path=[]):
         current_location = self.root
         for item in path:
             current_location = self.root / item
