@@ -49,7 +49,7 @@ class DirectoryHierarchy(Hierarchy):
     def get_subtree(self, path=[]):
         current_location = self.root
         for item in path:
-            current_location = self.root / item
+            current_location = current_location / item
         if current_location.is_dir():
             return [(p.name, "internal") if p.is_dir() else (p.name, "leaf")
                     for p in current_location.iterdir()]
