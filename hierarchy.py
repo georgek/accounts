@@ -51,7 +51,7 @@ class DirectoryHierarchy(Hierarchy):
         for item in path:
             current_location = self.root / item
         if current_location.is_dir():
-            return [(str(p), "internal") if p.is_dir() else (str(p), "leaf")
+            return [(p.name, "internal") if p.is_dir() else (p.name, "leaf")
                     for p in current_location.iterdir()]
         else:
             return []
