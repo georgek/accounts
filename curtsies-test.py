@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+import sys
+import argparse
+
+from hierarchy import Node, StringHierarchy, DirectoryHierarchy
+
 from pathlib import Path
 import itertools
 from collections import deque, defaultdict
@@ -23,6 +28,10 @@ class Editor():
         self.history = history
         self.history_pos = -1
         self.new_history = None
+
+    def empty(self):
+        self.typed = deque()
+        self.cursor = 0
 
     def edit_string(self, key, completions):
         """Edit string and move cursor according to given key.  Return new string and
@@ -159,77 +168,130 @@ matched string."""
     return (match_type, match)
 
 
-def narrow(typed, completions):
+def narrow(typed, completion_tuples):
     """Returns narrowed list of completions based on typed."""
-    completions = sorted([s for s in completions
+    completions = sorted([Node(s, t) for s, t in completion_tuples
                           if typed.lower() in s.lower()],
-                         key=lambda s: fuzzy_sort_key(typed, s))
+                         key=lambda tup: fuzzy_sort_key(typed, tup[0]))
     return completions
 
 
-def complete(strings):
+def complete(completion_tuples):
     """Returns the common prefix of given strings."""
+    strings = [s for s, t in completion_tuples]
     it_tw = itertools.takewhile(lambda t: len(set(t)) <= 1,
                                 zip(*strings))
     string = "".join(t[0] for t in it_tw)
     return string
 
 
-def completion_string(completions, current=0):
-    completions = [fmtstr(c) for c in completions]
+def pathstring(path, separator):
+    return separator.join(path)
+
+
+def prompt_string(prompt, path, separator):
+    pstr = pathstring(path, separator)
+    if pstr:
+        return f"{prompt}{pstr}{separator}"
+    else:
+        return prompt
+
+
+def completion_string(completion_tuples, separator="", current=0):
+    completions = [fmtstr(s+separator) if t == "internal" else fmtstr(s)
+                   for s, t in completion_tuples]
     if current < len(completions):
         completions[current] = yellow(bold(completions[current]))
     string = fmtstr(" | ").join(completions)
     return fmtstr("{") + string + fmtstr("}")
 
 
-def recursive_defaultdict():
-    return defaultdict(recursive_defaultdict)
-
-
-def make_hierarchy(strings, separator):
-    """Splits the strings by the separator and returns nested dicts."""
-    tree = defaultdict(recursive_defaultdict)
-    for string in strings:
-        segments = string.split(separator)
-        current_dict = tree
-        for segment in segments:
-            current_dict = current_dict[segment]
-    return tree
-
-
-def get_input(prompt="", completions=[], forbidden=[], history=[]):
-    with CursorAwareWindow(hide_cursor=False) as win:
-        with Input(keynames="curtsies") as input_generator:
-            editor = Editor(initial_string="",
-                            forbidden=forbidden,
-                            history=history)
-            current_completions = narrow("", completions)
-            editor.render_to(win, prompt,
-                             completion_string(current_completions))
-            try:
-                for key in input_generator:
-                    if key == "<Ctrl-d>":
-                        return None
-                    elif key == "<Ctrl-j>":
-                        win.render_to_terminal([])
-                        return "".join(editor.typed)
+def get_input(completion_tree, prompt="", forbidden=[], history=[]):
+    separator = completion_tree.separator
+    with CursorAwareWindow(hide_cursor=False) as win, \
+         Input(keynames="curtsies") as input_generator:
+        editor = Editor(initial_string="",
+                        forbidden=forbidden,
+                        history=history)
+        current_path = []
+        completions = completion_tree.get_subtree(current_path)
+        current_completions = narrow("", completions)
+        completion_selected = 0
+        editor.render_to(win,
+                         prompt_string(prompt, current_path,
+                                       separator),
+                         completion_string(current_completions,
+                                           separator,
+                                           completion_selected))
+        try:
+            for key in input_generator:
+                if key == "<Ctrl-d>":  # EOF
+                    return None
+                elif key == "<Ctrl-j>":  # Enter
+                    selected = current_completions[completion_selected]
+                    if selected.ntype == "internal":
+                        current_path.append(selected.label)
+                        completions = completion_tree.get_subtree(current_path)
+                        current_completions = narrow("", completions)
+                        editor.empty()
                     else:
-                        editor.edit_string(key, current_completions)
-                        current_completions = narrow(editor.to_string(),
-                                                     completions)
-                    editor.render_to(win, prompt,
-                                     completion_string(current_completions))
-            except KeyboardInterrupt:
-                return None
+                        win.render_to_terminal([])
+                        pstr = pathstring(current_path, separator)
+                        if pstr:
+                            return f"{pstr}{separator}{selected.label}"
+                        else:
+                            return selected.label
+                elif key in ["<Ctrl-h>", "<BACKSPACE>"]:
+                    if len(editor.to_string()) == 0 and current_path:
+                        current_path.pop()
+                        editor.render_to(win,
+                                         prompt_string(prompt, current_path,
+                                                       separator),
+                                         completion_string(current_completions,
+                                                           separator,
+                                                           completion_selected))
+                        completions = completion_tree.get_subtree(current_path)
+
+                editor.edit_string(key, current_completions)
+                current_completions = narrow(editor.to_string(),
+                                             completions)
+                # we could have a single completed string here, if it's an
+                # internal node then go to the next level
+                if len(current_completions) == 1:
+                    s, t = current_completions[0]
+                    if s == editor.to_string() and t == "internal":
+                        current_path.append(s)
+                        completions = completion_tree.get_subtree(current_path)
+                        current_completions = narrow("", completions)
+                        editor.empty()
+                editor.render_to(win,
+                                 prompt_string(prompt, current_path,
+                                               separator),
+                                 completion_string(current_completions,
+                                                   separator,
+                                                   completion_selected))
+        except KeyboardInterrupt:
+            return None
 
 
-def main():
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("strings_file", type=argparse.FileType("r"))
+    return parser.parse_args()
+
+
+def main(strings_file):
     history = deque([], HISTORY_SIZE)
-    dir_contents = [str(p) for p in Path(".").iterdir()]
+    # dir_contents = [str(p) for p in Path(".").iterdir()]
+    # hierarchy = DirectoryHierarchy(".")
+    # hierarchy = StringHierarchy(["a/b/c", "a/b/c/2", "a/b/c1", "a/d/2"],
+    #                             separator="/")
+    names = [line.strip() for line in strings_file]
+    hierarchy = StringHierarchy(names, separator=":")
     while True:
-        typed = get_input(prompt="Input: ",
-                          completions=dir_contents,
+        typed = get_input(hierarchy,
+                          prompt="Input: ",
+                          forbidden=[" "],
                           history=history)
         if typed:
             history.appendleft(typed)
@@ -239,4 +301,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = get_args()
+    main(**vars(args))
