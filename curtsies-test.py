@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+import termios
 
 from hierarchy import Node, StringHierarchy, DirectoryHierarchy
 
@@ -211,6 +212,12 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
     separator = completion_tree.separator
     with CursorAwareWindow(hide_cursor=False) as win, \
          Input(keynames="curtsies") as input_generator:
+        # hack to make Ctrl-s (and Ctrl-q) work
+        attrs = termios.tcgetattr(input_generator.in_stream)
+        attrs[-1][termios.VSTOP] = 0  # Ctrl-s
+        attrs[-1][termios.VSTART] = 0  # Ctrl-q
+        termios.tcsetattr(input_generator.in_stream, termios.TCSANOW, attrs)
+
         editor = Editor(initial_string="",
                         forbidden=forbidden,
                         history=history)
