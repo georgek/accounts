@@ -172,7 +172,8 @@ def narrow(typed, completion_tuples):
     """Returns narrowed list of completions based on typed."""
     completions = sorted([Node(s, t) for s, t in completion_tuples
                           if typed.lower() in s.lower()],
-                         key=lambda tup: fuzzy_sort_key(typed, tup[0]))
+                         key=lambda tup: fuzzy_sort_key(typed.lower(),
+                                                        tup.label.lower()))
     return completions
 
 
