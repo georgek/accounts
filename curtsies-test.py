@@ -211,13 +211,8 @@ def completion_string(completion_tuples, separator="", current=0):
 def get_input(completion_tree, prompt="", forbidden=[], history=[]):
     separator = completion_tree.separator
     with CursorAwareWindow(hide_cursor=False) as win, \
-         Input(keynames="curtsies") as input_generator:
-        # hack to make Ctrl-s (and Ctrl-q) work
-        attrs = termios.tcgetattr(input_generator.in_stream)
-        attrs[-1][termios.VSTOP] = 0  # Ctrl-s
-        attrs[-1][termios.VSTART] = 0  # Ctrl-q
-        termios.tcsetattr(input_generator.in_stream, termios.TCSANOW, attrs)
-
+         Input(keynames="curtsies",
+               disable_terminal_start_stop=True) as input_generator:
         editor = Editor(initial_string="",
                         forbidden=forbidden,
                         history=history)
