@@ -236,6 +236,7 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                         current_path.append(selected.label)
                         completions = completion_tree.get_subtree(current_path)
                         current_completions = narrow("", completions)
+                        completion_selected = 0
                         editor.empty()
                     else:
                         win.render_to_terminal([])
@@ -254,10 +255,24 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                                                            separator,
                                                            completion_selected))
                         completions = completion_tree.get_subtree(current_path)
-
-                editor.edit_string(key, current_completions)
-                current_completions = narrow(editor.to_string(),
-                                             completions)
+                        current_completions = narrow(editor.to_string(),
+                                                     completions)
+                    else:
+                        editor.edit_string(key, current_completions)
+                        current_completions = narrow(editor.to_string(),
+                                                     completions)
+                        completion_selected = 0
+                elif key == "<Ctrl-s>":
+                    completion_selected = ((completion_selected+1)
+                                           % len(current_completions))
+                elif key == "<Ctrl-r>":
+                    completion_selected = ((completion_selected-1)
+                                           % len(current_completions))
+                else:
+                    editor.edit_string(key, current_completions)
+                    current_completions = narrow(editor.to_string(),
+                                                 completions)
+                    completion_selected = 0
                 # we could have a single completed string here, if it's an
                 # internal node then go to the next level
                 if len(current_completions) == 1:
@@ -266,6 +281,7 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                         current_path.append(s)
                         completions = completion_tree.get_subtree(current_path)
                         current_completions = narrow("", completions)
+                        completion_selected = 0
                         editor.empty()
                 editor.render_to(win,
                                  prompt_string(prompt, current_path,
