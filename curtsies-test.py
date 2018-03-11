@@ -157,30 +157,39 @@ class Editor():
         win.render_to_terminal(fsa, cur)
 
 
-def fuzzy_sort_key(typed, match):
-    """Returns a tuple where the first item is the match type and second is the
-matched string."""
-    if match == typed:
-        match_type = 0
-    elif match.startswith(typed):
-        match_type = 1
+Completion = namedtuple("Completion", ["node", "type"])
+
+
+def fuzzy_sort_type(typed, candidate):
+    """Returns the type of the match as a CompletionType."""
+    typed, candidate = typed.lower(), candidate.lower()
+    if typed == candidate:
+        return 3                # exact
+    elif candidate.startswith(typed):
+        return 2                # prefix
+    elif typed in candidate:
+        return 1                # fuzzy
     else:
-        match_type = 2
-    return (match_type, match)
+        return 0                # no match
 
 
-def narrow(typed, completion_tuples):
-    """Returns narrowed list of completions based on typed."""
-    completions = sorted([t for t in completion_tuples
-                          if typed.lower() in t.label.lower()],
-                         key=lambda t: fuzzy_sort_key(typed.lower(),
-                                                      t.label.lower()))
-    return completions
+def narrow_completions(typed, nodes):
+    """Makes Completions from given Nodes according to typed."""
+    completions = (Completion(node, fuzzy_sort_type(typed, node.label))
+                   for node in nodes)
+
+    def sort_key(completion):
+        return (-completion.type, completion.node.label)
+
+    return sorted((completion for completion in completions
+                   if completion.type > 0),
+                  key=sort_key)
 
 
-def complete(completion_tuples):
+def complete(completions):
     """Returns the common prefix of given strings."""
-    strings = [t.label for t in completion_tuples]
+    strings = [completion.node.label for completion in completions
+               if completion.type > 1]
     chars_it = itertools.takewhile(lambda chars: len(set(chars)) <= 1,
                                    zip(*strings))
     string = "".join(chars[0] for chars in chars_it)
@@ -199,9 +208,10 @@ def prompt_string(prompt, path, separator):
         return prompt
 
 
-def completion_string(completion_tuples, separator="", current=0):
-    completions = [fmtstr(t.label+separator) if t.internal else fmtstr(t.label)
-                   for t in completion_tuples]
+def completion_string(completions, separator="", current=0):
+    completions = [fmtstr(t.node.label+separator) if t.node.internal
+                   else fmtstr(t.node.label)
+                   for t in completions]
     if current < len(completions):
         completions[current] = yellow(bold(completions[current]))
     string = fmtstr(" | ").join(completions)
@@ -217,13 +227,14 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                         forbidden=forbidden,
                         history=history)
         current_path = []
-        completions = completion_tree.get_subtree(current_path)
-        current_completions = narrow("", completions)
+        nodes = completion_tree.get_subtree(current_path)
+        # current_completions = narrow("", completions)
+        narrowed_completions = narrow_completions("", nodes)
         completion_selected = 0
         editor.render_to(win,
                          prompt_string(prompt, current_path,
                                        separator),
-                         completion_string(current_completions,
+                         completion_string(narrowed_completions,
                                            separator,
                                            completion_selected))
         try:
@@ -231,62 +242,57 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                 if key == "<Ctrl-d>":  # EOF
                     return None
                 elif key == "<Ctrl-j>":  # Enter
-                    selected = current_completions[completion_selected]
-                    if selected.internal:
-                        current_path.append(selected.label)
-                        completions = completion_tree.get_subtree(current_path)
-                        current_completions = narrow("", completions)
+                    selected_node = narrowed_completions[completion_selected].node
+                    if selected_node.internal:
+                        current_path.append(selected_node.label)
+                        nodes = completion_tree.get_subtree(current_path)
+                        narrowed_completions = narrow_completions("", nodes)
                         completion_selected = 0
                         editor.empty()
                     else:
                         win.render_to_terminal([])
                         pstr = pathstring(current_path, separator)
                         if pstr:
-                            return f"{pstr}{separator}{selected.label}"
+                            return f"{pstr}{separator}{selected_node.label}"
                         else:
-                            return selected.label
+                            return selected_node.label
                 elif key in ["<Ctrl-h>", "<BACKSPACE>"]:
                     if len(editor.to_string()) == 0 and current_path:
                         current_path.pop()
-                        editor.render_to(win,
-                                         prompt_string(prompt, current_path,
-                                                       separator),
-                                         completion_string(current_completions,
-                                                           separator,
-                                                           completion_selected))
-                        completions = completion_tree.get_subtree(current_path)
-                        current_completions = narrow(editor.to_string(),
-                                                     completions)
+                        nodes = completion_tree.get_subtree(current_path)
+                        narrowed_completions = narrow_completions("", nodes)
+                        completion_selected = 0
                     else:
-                        editor.edit_string(key, current_completions)
-                        current_completions = narrow(editor.to_string(),
-                                                     completions)
+                        editor.edit_string(key, narrowed_completions)
+                        narrowed_completions = narrow_completions(
+                            editor.to_string(), nodes)
                         completion_selected = 0
                 elif key == "<Ctrl-s>":
                     completion_selected = ((completion_selected+1)
-                                           % len(current_completions))
+                                           % len(narrowed_completions))
                 elif key == "<Ctrl-r>":
                     completion_selected = ((completion_selected-1)
-                                           % len(current_completions))
+                                           % len(narrowed_completions))
                 else:
-                    editor.edit_string(key, current_completions)
-                    current_completions = narrow(editor.to_string(),
-                                                 completions)
+                    editor.edit_string(key, narrowed_completions)
+                    narrowed_completions = narrow_completions(editor.to_string(),
+                                                              nodes)
                     completion_selected = 0
                 # we could have a single completed string here, if it's an
                 # internal node then go to the next level
-                if len(current_completions) == 1:
-                    t = current_completions[0]
-                    if t.label == editor.to_string() and t.internal:
-                        current_path.append(t.label)
-                        completions = completion_tree.get_subtree(current_path)
-                        current_completions = narrow("", completions)
+                if len(narrowed_completions) == 1:
+                    completion = narrowed_completions[0]
+                    if completion.node.label == editor.to_string() \
+                       and completion.node.internal:
+                        current_path.append(completion.node.label)
+                        nodes = completion_tree.get_subtree(current_path)
+                        narrowed_completions = narrow_completions("", nodes)
                         completion_selected = 0
                         editor.empty()
                 editor.render_to(win,
                                  prompt_string(prompt, current_path,
                                                separator),
-                                 completion_string(current_completions,
+                                 completion_string(narrowed_completions,
                                                    separator,
                                                    completion_selected))
         except KeyboardInterrupt:
