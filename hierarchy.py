@@ -5,7 +5,7 @@ from pathlib import Path
 from collections import namedtuple
 
 
-Node = namedtuple("Node", ["label", "ntype"])
+Node = namedtuple("Node", ["label", "internal"])
 
 
 class Hierarchy(metaclass=ABCMeta):
@@ -41,8 +41,8 @@ class StringHierarchy(Hierarchy):
         current_dict = self.tree
         for item in path:
             current_dict = current_dict[item]
-        return [Node(k, "internal") if current_dict[k]
-                else Node(k, "leaf")
+        return [Node(label=k, internal=True) if current_dict[k]
+                else Node(label=k, internal=False)
                 for k in current_dict]
 
 
@@ -56,8 +56,8 @@ class DirectoryHierarchy(Hierarchy):
         for item in path:
             current_location = current_location / item
         if current_location.is_dir():
-            return [Node(p.name, "internal") if p.is_dir()
-                    else Node(p.name, "leaf")
+            return [Node(label=p.name, internal=True) if p.is_dir()
+                    else Node(label=p.name, internal=False)
                     for p in current_location.iterdir()]
         else:
             return []

@@ -171,19 +171,19 @@ matched string."""
 
 def narrow(typed, completion_tuples):
     """Returns narrowed list of completions based on typed."""
-    completions = sorted([Node(s, t) for s, t in completion_tuples
-                          if typed.lower() in s.lower()],
-                         key=lambda tup: fuzzy_sort_key(typed.lower(),
-                                                        tup.label.lower()))
+    completions = sorted([t for t in completion_tuples
+                          if typed.lower() in t.label.lower()],
+                         key=lambda t: fuzzy_sort_key(typed.lower(),
+                                                      t.label.lower()))
     return completions
 
 
 def complete(completion_tuples):
     """Returns the common prefix of given strings."""
-    strings = [s for s, t in completion_tuples]
-    it_tw = itertools.takewhile(lambda t: len(set(t)) <= 1,
-                                zip(*strings))
-    string = "".join(t[0] for t in it_tw)
+    strings = [t.label for t in completion_tuples]
+    chars_it = itertools.takewhile(lambda chars: len(set(chars)) <= 1,
+                                   zip(*strings))
+    string = "".join(chars[0] for chars in chars_it)
     return string
 
 
@@ -200,8 +200,8 @@ def prompt_string(prompt, path, separator):
 
 
 def completion_string(completion_tuples, separator="", current=0):
-    completions = [fmtstr(s+separator) if t == "internal" else fmtstr(s)
-                   for s, t in completion_tuples]
+    completions = [fmtstr(t.label+separator) if t.internal else fmtstr(t.label)
+                   for t in completion_tuples]
     if current < len(completions):
         completions[current] = yellow(bold(completions[current]))
     string = fmtstr(" | ").join(completions)
@@ -232,7 +232,7 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                     return None
                 elif key == "<Ctrl-j>":  # Enter
                     selected = current_completions[completion_selected]
-                    if selected.ntype == "internal":
+                    if selected.internal:
                         current_path.append(selected.label)
                         completions = completion_tree.get_subtree(current_path)
                         current_completions = narrow("", completions)
@@ -276,9 +276,9 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                 # we could have a single completed string here, if it's an
                 # internal node then go to the next level
                 if len(current_completions) == 1:
-                    s, t = current_completions[0]
-                    if s == editor.to_string() and t == "internal":
-                        current_path.append(s)
+                    t = current_completions[0]
+                    if t.label == editor.to_string() and t.internal:
+                        current_path.append(t.label)
                         completions = completion_tree.get_subtree(current_path)
                         current_completions = narrow("", completions)
                         completion_selected = 0
