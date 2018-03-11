@@ -328,7 +328,8 @@ def main(strings_file):
                           forbidden=[" "],
                           history=history)
         if typed:
-            history.appendleft(typed)
+            if len(history) == 0 or typed != history[0]:
+                history.appendleft(typed)
             print(typed)
         else:
             return
