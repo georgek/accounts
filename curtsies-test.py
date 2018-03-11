@@ -239,9 +239,11 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                                            completion_selected))
         try:
             for key in input_generator:
-                if key == "<Ctrl-d>":  # EOF
+                if key == "<Ctrl-d>":
+                    # EOF
                     return None
-                elif key == "<Ctrl-j>":  # Enter
+                elif key == "<Ctrl-j>" and narrowed_completions:
+                    # Completing Enter
                     selected_node = narrowed_completions[completion_selected].node
                     if selected_node.internal:
                         current_path.append(selected_node.label)
@@ -256,6 +258,13 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                             return f"{pstr}{separator}{selected_node.label}"
                         else:
                             return selected_node.label
+                elif key == "<Esc+j>" or key == "<Ctrl-j>":
+                    # Immediate Enter
+                    pstr = pathstring(current_path, separator)
+                    if pstr:
+                        return f"{pstr}{separator}{editor.to_string()}"
+                    else:
+                        return editor.to_string()
                 elif key in ["<Ctrl-h>", "<BACKSPACE>"]:
                     if len(editor.to_string()) == 0 and current_path:
                         current_path.pop()
