@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-import sys
+# import sys
 import argparse
-import termios
 
-from hierarchy import Node, StringHierarchy, DirectoryHierarchy
+from hierarchy import StringHierarchy
+# from hierarchy import DirectoryHierarchy
 
-from pathlib import Path
+# from pathlib import Path
 import itertools
-from collections import deque, defaultdict
+from collections import deque, namedtuple
 
 from curtsies import Input, CursorAwareWindow, fsarray, fmtstr
 from curtsies.fmtfuncs import yellow, bold
