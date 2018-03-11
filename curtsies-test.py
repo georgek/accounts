@@ -275,7 +275,8 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                         return f"{pstr}{separator}{editor.to_string()}"
                     else:
                         return editor.to_string()
-                elif key in ["<Ctrl-h>", "<BACKSPACE>"]:
+                elif key in ["<Ctrl-h>", "<BACKSPACE>",
+                             "<Ctrl-BACKSPACE>", "<Esc+BACKSPACE>"]:
                     if len(editor.to_string()) == 0 and current_path:
                         current_path.pop()
                         nodes = completion_tree.get_subtree(current_path)
