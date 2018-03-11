@@ -34,6 +34,10 @@ class Editor():
         self.typed = deque()
         self.cursor = 0
 
+    def set_string(self, string):
+        self.typed = deque(string)
+        self.cursor = len(self.typed)
+
     def edit_string(self, key, completions):
         """Edit string and move cursor according to given key.  Return new string and
     cursor.
@@ -138,6 +142,12 @@ class Editor():
                 return i+1
         else:
             return 0
+
+    def has_more_history(self):
+        if len(self.history) > self.history_pos + 1:
+            return True
+        else:
+            return False
 
     def to_fsarray(self, width, prompt, tail=""):
         string = yellow(prompt) + fmtstr("".join(self.typed)) + tail
@@ -276,6 +286,18 @@ def get_input(completion_tree, prompt="", forbidden=[], history=[]):
                         narrowed_completions = narrow_completions(
                             editor.to_string(), nodes)
                         completion_selected = 0
+                elif key == "<Ctrl-n>" \
+                     or (key == "<Ctrl-p>" and editor.has_more_history()):
+                    editor.edit_string(key, narrowed_completions)
+                    recalled_path = editor.to_string().split(separator)
+                    current_path, rest_path = completion_tree.get_partial_path(
+                        recalled_path)
+                    rest = separator.join(rest_path)
+                    editor.set_string(rest)
+                    nodes = completion_tree.get_subtree(current_path)
+                    narrowed_completions = narrow_completions(
+                        editor.to_string(), nodes)
+                    completion_selected = 0
                 elif key == "<Ctrl-s>":
                     completion_selected = ((completion_selected+1)
                                            % len(narrowed_completions))
