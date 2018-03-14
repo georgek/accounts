@@ -64,7 +64,6 @@ def pydo_input(completion_tree, prompt="", forbidden=[], history=[]):
                         history=history)
         current_path = []
         nodes = completion_tree.get_subtree(current_path)
-        # current_completions = narrow("", completions)
         narrowed_completions = narrow_completions("", nodes)
         completion_selected = 0
         editor.render_to(win,
@@ -94,13 +93,23 @@ def pydo_input(completion_tree, prompt="", forbidden=[], history=[]):
                             return f"{pstr}{separator}{selected_node.label}"
                         else:
                             return selected_node.label
-                elif key == "<Esc+j>" or key == "<Ctrl-j>":
+                elif key in ["<Esc+j>", "<Ctrl-j>"]:
                     # Immediate Enter
                     pstr = pathstring(current_path, separator)
                     if pstr:
                         return f"{pstr}{separator}{editor.to_string()}"
                     else:
                         return editor.to_string()
+                elif key == separator:
+                    # we might need to to go the next level
+                    if narrowed_completions[0].type == 3:
+                        # just remove other completions to pick it up later
+                        narrowed_completions = narrowed_completions[0:1]
+                    else:
+                        editor.edit_string(key, narrowed_completions)
+                        narrowed_completions = narrow_completions(
+                            editor.to_string(), nodes)
+                        completion_selected = 0
                 elif key in ["<Ctrl-h>", "<BACKSPACE>",
                              "<Ctrl-BACKSPACE>", "<Esc+BACKSPACE>"]:
                     if len(editor.to_string()) == 0 and current_path:
@@ -113,8 +122,8 @@ def pydo_input(completion_tree, prompt="", forbidden=[], history=[]):
                         narrowed_completions = narrow_completions(
                             editor.to_string(), nodes)
                         completion_selected = 0
-                elif key == "<Ctrl-n>" \
-                     or (key == "<Ctrl-p>" and editor.has_more_history()):
+                elif (key == "<Ctrl-n>"
+                      or (key == "<Ctrl-p>" and editor.has_more_history())):
                     editor.edit_string(key, narrowed_completions)
                     recalled_path = editor.to_string().split(separator)
                     current_path, rest_path = completion_tree.get_partial_path(
