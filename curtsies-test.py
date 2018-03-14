@@ -4,7 +4,7 @@ import argparse
 
 from collections import deque
 
-from hierarchy import StringHierarchy
+from hierarchy import DirectoryHierarchy, StringHierarchy
 from pydo import pydo_input
 
 HISTORY_SIZE = 10
@@ -12,18 +12,17 @@ HISTORY_SIZE = 10
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("strings_file", type=argparse.FileType("r"))
+    parser.add_argument("-f", "--strings_file", type=argparse.FileType("r"))
     return parser.parse_args()
 
 
 def main(strings_file):
     history = deque([], HISTORY_SIZE)
-    # dir_contents = [str(p) for p in Path(".").iterdir()]
-    # hierarchy = DirectoryHierarchy(".")
-    # hierarchy = StringHierarchy(["a/b/c", "a/b/c/2", "a/b/c1", "a/d/2"],
-    #                             separator="/")
-    names = [line.strip() for line in strings_file]
-    hierarchy = StringHierarchy(names, separator=":")
+    if strings_file:
+        names = [line.strip() for line in strings_file]
+        hierarchy = StringHierarchy(names, separator=":")
+    else:
+        hierarchy = DirectoryHierarchy(".")
     while True:
         typed = pydo_input(hierarchy,
                            prompt="Input: ",
