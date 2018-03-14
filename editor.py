@@ -11,6 +11,8 @@ Completion = namedtuple("Completion", ["node", "type"])
 
 def complete(completions):
     """Returns the common prefix of given strings."""
+    if len(completions) == 1:
+        return completions[0].node.label
     strings = [completion.node.label for completion in completions
                if completion.type > 1]
     chars_it = itertools.takewhile(lambda chars: len(set(chars)) <= 1,
