@@ -51,20 +51,21 @@ def completion_string(completions, separator="", current=0):
     if current < len(completions):
         completions[current] = yellow(bold(completions[current]))
     string = fmtstr(" | ").join(completions)
-    return fmtstr("{") + string + fmtstr("}")
+    return fmtstr(" {") + string + fmtstr("}")
 
 
-def pydo_input(completion_tree, prompt="", forbidden=[], history=[]):
+def pydo_input(completion_tree, prompt="", initial_string="",
+               forbidden=[], history=[]):
     separator = completion_tree.separator
     with CursorAwareWindow(hide_cursor=False) as win, \
          Input(keynames="curtsies",
                disable_terminal_start_stop=True) as input_generator:
-        editor = Editor(initial_string="",
+        editor = Editor(initial_string=initial_string,
                         forbidden=forbidden,
                         history=history)
         current_path = []
         nodes = completion_tree.get_subtree(current_path)
-        narrowed_completions = narrow_completions("", nodes)
+        narrowed_completions = narrow_completions(initial_string, nodes)
         completion_selected = 0
         editor.render_to(win,
                          prompt_string(prompt, current_path,
