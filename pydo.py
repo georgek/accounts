@@ -102,7 +102,7 @@ def pydo_input(completion_tree, prompt="", forbidden=[], history=[]):
                         return editor.to_string()
                 elif key == separator:
                     # we might need to to go the next level
-                    if narrowed_completions[0].type == 3:
+                    if narrowed_completions and narrowed_completions[0].type == 3:
                         # just remove other completions to pick it up later
                         narrowed_completions = narrowed_completions[0:1]
                     else:
