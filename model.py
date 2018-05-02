@@ -83,7 +83,7 @@ def read_csv_file(csv_file, delimiter=",", quotechar='"'):
 
     X = np.array([clean_string(s) for s in payee_strings])
     y = np.array([account_dict[account_name] for account_name in account_names])
-    target_names = account_dict.keys()
+    target_names = list(account_dict.keys())
     return X, y, target_names
 
 
