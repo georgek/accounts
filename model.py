@@ -21,6 +21,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import confusion_matrix, classification_report
 
+import colored
+from colored import stylize
+
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -50,15 +53,25 @@ def print_confusion_matrix(matrix, labels, fileout=sys.stdout):
     mm = np.max(matrix)
     ml = len(str(mm))
     ll = max(len(lab) for lab in labels)
-    fileout.write(" " * (ll+1))
+    fileout.write(" " * ll)
     tinylabs = (lab.split(":")[-1][0] for lab in labels)
     for tinylab in tinylabs:
         fileout.write(f"{tinylab:>{ml+1}s}")
     fileout.write("\n")
-    for label, row in zip(labels, matrix):
-        fileout.write(f"{label:>{ll+1}s}")
-        for v in row:
-            fileout.write(f"{v:>{ml+1}d}")
+    for j, (label, row) in enumerate(zip(labels, matrix)):
+        fileout.write(f"{label:>{ll}s}")
+        for i, v in enumerate(row):
+            if i == j:
+                fg = "green_1"
+            elif v > 0:
+                fg = "red_1"
+            else:
+                fg = "grey_50"
+            if fileout.isatty():
+                fileout.write(stylize(f"{v:>{ml+1}d}", colored.fg(fg)))
+            else:
+                fileout.write(f"{v:>{ml+1}d}")
+
         fileout.write("\n")
 
 
