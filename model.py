@@ -77,7 +77,7 @@ def print_confusion_matrix(matrix, labels, fileout=sys.stdout):
 
 def make_model():
     text_clf = Pipeline([("vect", CountVectorizer(analyzer="char",
-                                                  ngram_range=(3, 6))),
+                                                  ngram_range=(3, 9))),
                          ("tfidf", TfidfTransformer(use_idf=False)),
                          ("clf", SGDClassifier(loss="hinge", penalty="l2",
                                                alpha=0.001, random_state=42,
