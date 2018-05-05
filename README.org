@@ -1,0 +1,72 @@
+#+TITLE: accounts
+#+DATE: <2018-05-05 Sat>
+#+AUTHOR: George Kettleborough
+#+EMAIL: kettleg@gmail.com
+
+Tools to help converting my various CSV outputs from bank accounts and credit
+cards into a ledger file.  There are (or will be) a few components:
+- Sanitising the CSV files from the banks/credit cards I use,
+- Command-line interface for easily selecting the correct account for each
+  transaction (for this I implemented something like ido-mode in Python),
+- Machine learning to automatically predict the account for each transaction,
+- Consolidation of ledger files from various accounts (for inter-account
+  transfers).
+
+* Installation
+Requires Python >= 3.6. Scripts assume the interpreter is called
+~python~. Install the requirements with pip:
+#+BEGIN_SRC bash
+  pip install -r requirements.txt
+#+END_SRC
+
+* Converting one CSV to ledger format
+Use ~accounts.py~. Only three parameters are required, the others are for
+using training data to enable prediction:
+
+#+BEGIN_QUOTE
+usage: accounts.py [-h] [-t TRAINING_DATA] [-n NEW_TRAINING_DATA_OUTPUT]
+                   [-c CURRENCY]
+                   csv_file account_name ledger_output
+
+Makes ledger from CSV file semi-automatically. If training data is provided
+then a model is trained and used to predict classes.
+
+positional arguments:
+  csv_file              CSV file containing date, payee, and amount (relative
+                        to this account).
+  account_name          Name of this account.
+  ledger_output         Output Ledger file.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t TRAINING_DATA, --training_data TRAINING_DATA
+                        CSV file containing training data of form
+                        payee_string,account_name (default: None)
+  -n NEW_TRAINING_DATA_OUTPUT, --new_training_data_output NEW_TRAINING_DATA_OUTPUT
+                        File to write new training data generated during this
+                        session. (default: None)
+  -c CURRENCY, --currency CURRENCY
+                        Currency symbol to use. (default: £)
+#+END_QUOTE
+
+For example:
+#+BEGIN_SRC bash
+  ./accounts.py -t accumulation/training/Current-201710.csv \
+                -n output/training/Current-201711.csv \
+                ~/bank/natwest-current/Current-20180503-split/Current-201711.csv \
+                Assets:Natwest:Current \
+                output/ledger/Current-201711.ledger
+#+END_SRC
+
+* Testing the model
+Run ~model.py~ to show how the model performs on a 3-fold validation test, for
+example:
+#+BEGIN_SRC bash
+  ./model.py accumulation/training/Current-201711.csv
+#+END_SRC
+
+* Todo
+
+** TODO Ledger file consolidation
+
+** TODO Proper sanitising scripts
