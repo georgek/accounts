@@ -60,10 +60,12 @@ def pydo_input(completion_tree, prompt="", initial_string="",
     with CursorAwareWindow(hide_cursor=False) as win, \
          Input(keynames="curtsies",
                disable_terminal_start_stop=True) as input_generator:
+        initial_path = initial_string.split(separator)
+        current_path, rest = completion_tree.get_partial_path(initial_path)
+        initial_string = separator.join(rest)
         editor = Editor(initial_string=initial_string,
                         forbidden=forbidden,
                         history=history)
-        current_path = []
         nodes = completion_tree.get_subtree(current_path)
         narrowed_completions = narrow_completions(initial_string, nodes)
         completion_selected = 0
