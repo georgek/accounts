@@ -32,7 +32,7 @@ def get_args():
                         help="CSV file containing training data of form "
                         "payee_string,account_name")
     parser.add_argument("-n", "--new_training_data_output",
-                        type=argparse.FileType("x"),
+                        type=str,
                         help="File to write new training data generated during "
                         "this session.")
     parser.add_argument("-c", "--currency", type=str, default=DEFAULT_CURRENCY,
@@ -94,7 +94,8 @@ def main(csv_file,
         target_set = set()
 
     if new_training_data_output:
-        new_training_data_writer = csv.writer(new_training_data_output)
+        train_out = open(new_training_data_output, "x", newline="")
+        new_training_data_writer = csv.writer(train_out)
 
     history = deque([], HISTORY_SIZE)
     hierarchy = StringHierarchy(target_names, separator=":")
@@ -130,6 +131,8 @@ def main(csv_file,
         else:
             break
 
+    if new_training_data_output:
+        train_out.close()
     print("Bye.")
 
 
