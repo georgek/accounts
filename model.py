@@ -85,18 +85,23 @@ def make_model():
     return text_clf
 
 
+def payees_accounts_to_X_y(payees, accounts):
+    """Converts lists of payees and names to X, y and target_names for use in
+models."""
+    payees, accounts = remove_small_groups(payees, accounts)
+    account_dict = OrderedDict((name, i) for i, name in enumerate(set(accounts)))
+
+    X = np.array([clean_string(s) for s in payees])
+    y = np.array([account_dict[account] for account in accounts])
+    target_names = list(account_dict.keys())
+    return X, y, target_names
+
+
 def read_csv_file(csv_file, delimiter=",", quotechar='"'):
     """Returns X, y and target_names for training CSV."""
     csv_reader = csv.reader(csv_file, delimiter=delimiter, quotechar=quotechar)
-    payee_strings, account_names = zip(*csv_reader)
-    payee_strings, account_names = remove_small_groups(
-        payee_strings, account_names)
-    account_dict = OrderedDict((name, i)
-                               for i, name in enumerate(set(account_names)))
-
-    X = np.array([clean_string(s) for s in payee_strings])
-    y = np.array([account_dict[account_name] for account_name in account_names])
-    target_names = list(account_dict.keys())
+    payees, accounts = zip(*csv_reader)
+    X, y, target_names = payees_accounts_to_X_y(payees, accounts)
     return X, y, target_names
 
 
