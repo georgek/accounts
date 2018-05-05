@@ -5,6 +5,7 @@ import argparse
 import csv
 from collections import deque
 import re
+from datetime import datetime, MINYEAR
 
 import model
 from hierarchy import StringHierarchy
@@ -72,10 +73,63 @@ Decimals."""
 
 
 def format_transaction(date, payee, account_in, account_out, amount, currency):
+    """Formats a simple two account transaction into Ledger format."""
     date = clean_date(date)
     amount = format_amount(amount, currency)
     s = f"{date} {payee}\n    {account_in:<36}{amount:>12}\n    {account_out}\n"
     return s
+
+
+LEDGER_PAYEE_LINE = r"^([0-9\-]+)(=[0-9\-]+)?(?:\s+([\*!]))?"\
+                                    "(?:\s+(\([^\)]*\)))?\s+(.*)$"
+LEDGER_ACCOUNT_LINE = r"\s+[\[\(]?(\S+)[\]\)]?(?:\s+(\S+))?"
+
+
+def parse_ledger_file(ledger_file, account_name, begin_date=None):
+    """Parse ledger_file to retrieve account completion data and training
+data. Training data is retrieved only for the "other side" of the transaction
+for the given account_name. Only entries on or after the begin_date are
+considered.
+
+    """
+    if begin_date is None:
+        begin_date = datetime(MINYEAR, 1, 1)
+
+    all_accounts = set()
+    payees, accounts = [], []
+
+    current_date = None
+    for i, line in enumerate(ledger_file, 1):
+        line = line[:-1]
+        if re.match(r"^\d", line):
+            # date/payee line
+            match = re.match(LEDGER_PAYEE_LINE, line)
+            if match is None:
+                raise Exception(f"Bad payee line, line {i}.")
+            try:
+                current_date = datetime.strptime(match.group(1),
+                                                 "%Y-%m-%d")
+            except ValueError as e:
+                raise Exception(f"Bad date, line {i}.") from e
+            current_payee = match.group(5)
+            current_accounts = []
+
+        elif re.match(r"^\s", line):
+            # account lines (only need to match the account name, no amounts)
+            match = re.match(LEDGER_ACCOUNT_LINE, line)
+            if match is None:
+                raise Exception(f"Bad account line, line {i}.")
+            account = match.group(1)
+            if account != account_name:
+                current_accounts.append(account)
+
+        elif line == "" and current_date and current_date >= begin_date:
+            all_accounts.update(current_accounts)
+            if len(current_accounts) == 1:
+                payees.append(current_payee)
+                accounts.append(current_accounts[0])
+
+    return all_accounts, payees, accounts
 
 
 def main(csv_file,
