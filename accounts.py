@@ -60,9 +60,15 @@ some stupid American format."""
 
 
 def format_amount(amount, currency, negative=True):
-    if negative:
-        amount = re.sub(r"^-", "", amount)
-    return f"{currency}{amount}"
+    """Formats amount. Doing this as a string to avoid having to use Big
+Decimals."""
+    amount, n_subs = re.subn(r"^-", "", amount)
+    was_neg = bool(n_subs % 2)
+    if was_neg:
+        sign = ""
+    else:
+        sign = "-"
+    return f"{sign}{currency}{amount}"
 
 
 def format_transaction(date, payee, account_in, account_out, amount, currency):
