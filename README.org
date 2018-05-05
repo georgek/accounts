@@ -23,7 +23,7 @@ Requires Python >= 3.6. Scripts assume the interpreter is called
 Use ~accounts.py~. Only three parameters are required, the others are for
 using training data to enable prediction:
 
-#+BEGIN_EXPORT ascii
+#+BEGIN_SRC
 usage: accounts.py [-h] [-t TRAINING_DATA] [-n NEW_TRAINING_DATA_OUTPUT]
                    [-c CURRENCY]
                    csv_file account_name ledger_output
@@ -47,7 +47,7 @@ optional arguments:
                         session. (default: None)
   -c CURRENCY, --currency CURRENCY
                         Currency symbol to use. (default: £)
-#+END_EXPORT
+#+END_SRC
 
 For example:
 #+BEGIN_SRC bash
