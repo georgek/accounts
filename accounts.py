@@ -5,7 +5,7 @@ import argparse
 import csv
 from collections import deque
 import re
-from datetime import datetime, MINYEAR
+from datetime import datetime, timedelta
 
 import model
 from hierarchy import StringHierarchy
@@ -30,14 +30,14 @@ def get_args():
     parser.add_argument("ledger_output", type=argparse.FileType("x"),
                         help="Output Ledger file.")
     parser.add_argument("-t", "--training_data", type=argparse.FileType("r"),
-                        help="CSV file containing training data of form "
-                        "payee_string,account_name")
-    parser.add_argument("-n", "--new_training_data_output",
-                        type=str,
-                        help="File to write new training data generated during "
-                        "this session.")
+                        help="Ledger file to use for training data "
+                        "and accounts names.")
     parser.add_argument("-c", "--currency", type=str, default=DEFAULT_CURRENCY,
                         help="Currency symbol to use.")
+    parser.add_argument("-m", "--ledger-maximum-age", type=int,
+                        default=model.DEFAULT_LEDGER_MAXIMUM_AGE,
+                        help="Maximum age, in days, of entries in ledger file "
+                        "to use for training.")
     return parser.parse_args()
 
 
@@ -80,79 +80,25 @@ def format_transaction(date, payee, account_in, account_out, amount, currency):
     return s
 
 
-LEDGER_PAYEE_LINE = r"^([0-9\-]+)(=[0-9\-]+)?(?:\s+([\*!]))?"\
-                                    "(?:\s+(\([^\)]*\)))?\s+(.*)$"
-LEDGER_ACCOUNT_LINE = r"\s+[\[\(]?(\S+)[\]\)]?(?:\s+(\S+))?"
-
-
-def parse_ledger_file(ledger_file, account_name, begin_date=None):
-    """Parse ledger_file to retrieve account completion data and training
-data. Training data is retrieved only for the "other side" of the transaction
-for the given account_name. Only entries on or after the begin_date are
-considered.
-
-    """
-    if begin_date is None:
-        begin_date = datetime(MINYEAR, 1, 1)
-
-    all_accounts = set()
-    payees, accounts = [], []
-
-    current_date = None
-    for i, line in enumerate(ledger_file, 1):
-        line = line[:-1]
-        if re.match(r"^\d", line):
-            # date/payee line
-            match = re.match(LEDGER_PAYEE_LINE, line)
-            if match is None:
-                raise Exception(f"Bad payee line, line {i}.")
-            try:
-                current_date = datetime.strptime(match.group(1),
-                                                 "%Y-%m-%d")
-            except ValueError as e:
-                raise Exception(f"Bad date, line {i}.") from e
-            current_payee = match.group(5)
-            current_accounts = []
-
-        elif re.match(r"^\s", line):
-            # account lines (only need to match the account name, no amounts)
-            match = re.match(LEDGER_ACCOUNT_LINE, line)
-            if match is None:
-                raise Exception(f"Bad account line, line {i}.")
-            account = match.group(1)
-            if account != account_name:
-                current_accounts.append(account)
-
-        elif line == "" and current_date and current_date >= begin_date:
-            all_accounts.update(current_accounts)
-            if len(current_accounts) == 1:
-                payees.append(current_payee)
-                accounts.append(current_accounts[0])
-
-    return all_accounts, payees, accounts
-
-
 def main(csv_file,
          account_name,
          ledger_output,
          training_data=None,
-         new_training_data_output=None,
-         currency=DEFAULT_CURRENCY):
+         currency=DEFAULT_CURRENCY,
+         ledger_maximum_age=model.DEFAULT_LEDGER_MAXIMUM_AGE):
     if training_data:
+        begin_date = datetime.today() - timedelta(days=ledger_maximum_age)
         clf = model.make_model()
-        X, y, target_names = model.read_csv_file(training_data)
-        target_set = set(target_names)
+        all_accounts, payees, accounts = model.parse_ledger_file(
+            training_data, account_name, begin_date=begin_date)
+        X, y, target_names = model.payees_accounts_to_X_y(payees, accounts)
         clf.fit(X, y)
     else:
         clf = None
-        target_set = set()
-
-    if new_training_data_output:
-        train_out = open(new_training_data_output, "x", newline="")
-        new_training_data_writer = csv.writer(train_out)
+        all_accounts = set()
 
     history = deque([], HISTORY_SIZE)
-    hierarchy = StringHierarchy(target_names, separator=":")
+    hierarchy = StringHierarchy(all_accounts, separator=":")
     for i, record in enumerate(csv.reader(csv_file)):
         try:
             date, payee, amount = record
@@ -174,19 +120,15 @@ def main(csv_file,
         if typed:
             if len(history) == 0 or typed != history[0]:
                 history.appendleft(typed)
-                target_set.add(typed)
-                hierarchy = StringHierarchy(target_set, separator=":")
+                all_accounts.add(typed)
+                hierarchy = StringHierarchy(all_accounts, separator=":")
 
             entry = format_transaction(date, payee, typed, account_name,
                                        amount, currency)
             print(entry, file=ledger_output)
-            if new_training_data_output:
-                new_training_data_writer.writerow([payee, typed])
         else:
             break
 
-    if new_training_data_output:
-        train_out.close()
     print("Bye.")
 
 
