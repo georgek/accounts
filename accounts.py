@@ -53,6 +53,7 @@ some stupid American format."""
 def format_amount(amount, currency, negative=True):
     """Formats amount. Doing this as a string to avoid having to use Big
 Decimals."""
+    amount = amount.strip()
     amount, n_subs = re.subn(r"^-", "", amount)
     was_neg = bool(n_subs % 2)
     if was_neg:
