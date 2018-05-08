@@ -7,6 +7,8 @@ from collections import deque
 import re
 from datetime import datetime, timedelta
 
+import dateutil.parser
+
 import model
 from hierarchy import StringHierarchy
 from pydo import pydo_input
@@ -44,20 +46,8 @@ def get_args():
 def clean_date(date_string):
     """Makes a proper date string as long as the year is four digits and it's not
 some stupid American format."""
-    if "-" in date_string:
-        components = date_string.split("-")
-    elif "/" in date_string:
-        components = date_string.split("/")
-    else:
-        raise Exception(f"Date format not recognised: {date_string}.")
-    assert(len(components) == 3)
-    if len(components[0]) == 4:
-        year, month, day = components
-    elif len(components[2]) == 4:
-        day, month, year = components
-    else:
-        raise Exception(f"Date format not recognised: {date_string}.")
-    return "-".join([year, month, day])
+    date = dateutil.parser.parse(date_string)
+    return date.strftime("%Y-%m-%d")
 
 
 def format_amount(amount, currency, negative=True):
@@ -123,8 +113,11 @@ def main(csv_file,
                 all_accounts.add(typed)
                 hierarchy = StringHierarchy(all_accounts, separator=":")
 
-            entry = format_transaction(date, payee, typed, account_name,
-                                       amount, currency)
+            try:
+                entry = format_transaction(date, payee, typed, account_name,
+                                           amount, currency)
+            except (ValueError, OverflowError) as e:
+                sys.exit(f"Ivalid date on line {i}: {e}")
             print(entry, file=ledger_output)
         else:
             break
