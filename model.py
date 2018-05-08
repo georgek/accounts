@@ -49,7 +49,10 @@ def remove_small_groups(sources, targets, min_size=5):
     tcount = Counter(targets)
     new_st = [(s, t) for s, t in zip(sources, targets)
               if tcount[t] >= min_size]
-    return tuple(zip(*new_st))
+    if new_st:
+        return tuple(zip(*new_st))
+    else:
+        return ([], [])
 
 
 def clean_string(string):
@@ -174,6 +177,8 @@ def main(training_data,
     all_accounts, payees, accounts = parse_ledger_file(
         training_data, account_name, begin_date=begin_date)
     X, y, target_names = payees_accounts_to_X_y(payees, accounts)
+    if len(X) < 1:
+        sys.exit("Nothing to classify. Only small groups?")
 
     text_clf = make_model()
 

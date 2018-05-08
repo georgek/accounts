@@ -76,16 +76,18 @@ def main(csv_file,
          training_data=None,
          currency=DEFAULT_CURRENCY,
          ledger_maximum_age=model.DEFAULT_LEDGER_MAXIMUM_AGE):
+
+    clf = None
+    all_accounts = set()
+
     if training_data:
         begin_date = datetime.today() - timedelta(days=ledger_maximum_age)
-        clf = model.make_model()
         all_accounts, payees, accounts = model.parse_ledger_file(
             training_data, account_name, begin_date=begin_date)
         X, y, target_names = model.payees_accounts_to_X_y(payees, accounts)
-        clf.fit(X, y)
-    else:
-        clf = None
-        all_accounts = set()
+        if len(X) > 0:
+            clf = model.make_model()
+            clf.fit(X, y)
 
     history = deque([], HISTORY_SIZE)
     hierarchy = StringHierarchy(all_accounts, separator=":")
