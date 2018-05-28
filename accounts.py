@@ -46,7 +46,7 @@ def get_args():
 def clean_date(date_string):
     """Makes a proper date string as long as the year is four digits and it's not
 some stupid American format."""
-    date = dateutil.parser.parse(date_string)
+    date = dateutil.parser.parse(date_string, dayfirst=True)
     return date.strftime("%Y-%m-%d")
 
 
