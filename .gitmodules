@@ -1,0 +1,3 @@
+[submodule "vendor/curtsies"]
+	path = vendor/curtsies
+	url = https://github.com/bpython/curtsies.git
