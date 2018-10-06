@@ -44,15 +44,22 @@ def get_args():
 
 
 def clean_date(date_string):
-    """Makes a proper date string as long as the year is four digits and it's not
-some stupid American format."""
+    """Makes a proper date string
+
+    Works as long as the year is four digits and it's not some stupid American
+    format.
+
+    """
     date = dateutil.parser.parse(date_string, dayfirst=True)
     return date.strftime("%Y-%m-%d")
 
 
 def format_amount(amount, currency, negative=True):
-    """Formats amount. Doing this as a string to avoid having to use Big
-Decimals."""
+    """Format amount for ledger file
+
+    Doing this as a string to avoid having to use Big Decimals
+
+    """
     amount = amount.strip()
     amount, n_subs = re.subn(r"^-", "", amount)
     was_neg = bool(n_subs % 2)
