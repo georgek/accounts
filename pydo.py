@@ -58,8 +58,8 @@ def pydo_input(completion_tree, prompt="", initial_string="",
                forbidden=[], history=[]):
     separator = completion_tree.separator
     with CursorAwareWindow(hide_cursor=False) as win, \
-         Input(keynames="curtsies",
-               disable_terminal_start_stop=True) as input_generator:
+            Input(keynames="curtsies",
+                  disable_terminal_start_stop=True) as input_generator:
         initial_path = initial_string.split(separator)
         current_path, rest = completion_tree.get_partial_path(initial_path)
         initial_string = separator.join(rest)
