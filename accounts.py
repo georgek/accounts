@@ -113,7 +113,7 @@ def main(csv_file,
             prediction = ""
 
         typed = pydo_input(hierarchy,
-                           prompt=f"{payee} ({amount}): ",
+                           prompt=f"[{date}] {payee} ({amount}): ",
                            initial_string=prediction,
                            forbidden=[" "],
                            history=history)
