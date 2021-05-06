@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import argparse
+import sys
+from datetime import datetime, date
+
+import matplotlib.pyplot as plt
+
+
+def valid_date(string):
+    try:
+        return datetime.strptime(string, "%Y-%m-%d")
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Not a valid date: {string}")
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="Plot ledger output",
+    )
+    parser.add_argument("--xmin", type=valid_date)
+    parser.add_argument("--xmax", type=valid_date)
+    parser.add_argument("--ymin", type=float)
+    parser.add_argument("--ymax", type=float)
+
+    return parser.parse_args()
+
+
+def main(
+        xmin=None,
+        xmax=None,
+        ymin=None,
+        ymax=None,
+):
+    data = sorted(line.split() for line in sys.stdin)
+    dates = [datetime.strptime(d[0], "%Y-%m-%d").date() for d in data]
+    values = [float(d[1]) for d in data]
+
+    plt.style.use("bmh")
+
+    fig, ax = plt.subplots()
+    ax.step(dates, values)
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+
+    plt.show()
+
+
+if __name__ == '__main__':
+    args = get_args()
+    main(**vars(args))
