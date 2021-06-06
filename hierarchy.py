@@ -27,11 +27,12 @@ class Hierarchy(metaclass=ABCMeta):
 class StringHierarchy(Hierarchy):
     def __init__(self, strings, separator=""):
         self.tree = {}
+        self._strings = set(strings)
         self._separator = separator
         if not separator:
             self.tree = {s: None for s in strings}
         else:
-            for string in strings:
+            for string in self._strings:
                 segments = string.split(separator)
                 current_dict = self.tree
                 for segment in segments:
@@ -71,6 +72,9 @@ class StringHierarchy(Hierarchy):
             pass
         finally:
             return found_path, list(rest_path)
+
+    def __str__(self):
+        return f"<StringHierarchy: {len(self._strings)} strings>"
 
 
 class DirectoryHierarchy(Hierarchy):

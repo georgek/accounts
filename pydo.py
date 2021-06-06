@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import vendor                   # noqa
-
 from curtsies import Input, CursorAwareWindow, fmtstr
 from curtsies.fmtfuncs import yellow, bold
 

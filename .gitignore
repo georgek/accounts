@@ -3,3 +3,5 @@ __pycache__/
 data/
 accumulation/
 output/
+*.egg-info
+.eggs
