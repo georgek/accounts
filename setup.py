@@ -9,7 +9,7 @@ setup(
     python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
     install_requires=[
-        "numpy",
+        "numpy~=1.13.0",
         "scikit-learn",
         "colored",
         "curtsies",
