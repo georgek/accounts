@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+ledger reg -Jn -X £ -f ~/ledger/All.ledger Assets Liabilities \
+    | plot --ymax 100000 -t "Total Wealth" --event_file ~/ledger/events.yaml

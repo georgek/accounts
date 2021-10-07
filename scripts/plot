@@ -2,9 +2,25 @@
 
 import argparse
 import sys
+from bisect import bisect_left
 from datetime import datetime, date
+from dataclasses import dataclass
+from yaml import safe_load as load_yaml
+from typing import List
 
 import matplotlib.pyplot as plt
+
+
+@dataclass
+class Event:
+    date: date
+    type: str
+    text: str
+
+
+def parse_events(event_file):
+    data = load_yaml(event_file)
+    return [Event(**item) for item in data]
 
 
 def valid_date(string):
@@ -14,24 +30,68 @@ def valid_date(string):
         raise argparse.ArgumentTypeError(f"Not a valid date: {string}")
 
 
+def date_to_value(dates: List[date], values: List[float], date: date) -> float:
+    position = bisect_left(dates, date)
+    return values[position]
+
+
 def get_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Plot ledger output",
     )
+    parser.add_argument("-t", "--title", type=str)
     parser.add_argument("--xmin", type=valid_date)
     parser.add_argument("--xmax", type=valid_date)
     parser.add_argument("--ymin", type=float)
     parser.add_argument("--ymax", type=float)
+    parser.add_argument("-e", "--event_file", type=argparse.FileType("r"))
 
     return parser.parse_args()
 
 
+def add_event_grid(ax, dates: List[date], values: List[float], events: List[Event]):
+    sorted_events = list(sorted(events, key=lambda e: e.date))
+    shade = True
+    for start, end in zip(sorted_events, sorted_events[1:]):
+        if shade := not shade:
+            ax.fill_betweenx(values, start.date, end.date, color="grey", alpha=0.1)
+
+    min_value = min(values)
+    max_value = max(values)
+    middle_value = (min_value + max_value) / 2
+    offset = (max_value - min_value) * 0.1
+
+    for event in sorted_events:
+        value_at_date = date_to_value(dates, values, event.date)
+        if value_at_date < middle_value:
+            mid = (value_at_date + max_value) / 2
+        else:
+            mid = (min_value + value_at_date) / 2
+
+        if event.type == "house":
+            y = mid - offset
+        elif event.type == "job":
+            y = mid + offset
+        else:
+            y = mid
+        ax.text(
+            event.date,
+            y,
+            event.text,
+            rotation="vertical",
+            horizontalalignment="center",
+            verticalalignment="center",
+        )
+
+
 def main(
-        xmin=None,
-        xmax=None,
-        ymin=None,
-        ymax=None,
+    title=None,
+    xmin=None,
+    xmax=None,
+    ymin=None,
+    ymax=None,
+    event_file=None,
 ):
     data = sorted(line.split() for line in sys.stdin)
     dates = [datetime.strptime(d[0], "%Y-%m-%d").date() for d in data]
@@ -40,14 +100,19 @@ def main(
     plt.style.use("bmh")
 
     fig, ax = plt.subplots()
-    ax.step(dates, values)
+    ax.step(dates, values, where="post")
 
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
 
+    events = parse_events(event_file) if event_file else []
+    add_event_grid(ax, dates, values, events)
+
+    plt.title(title)
+
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = get_args()
     main(**vars(args))
