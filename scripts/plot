@@ -5,6 +5,7 @@ import sys
 from bisect import bisect_left
 from datetime import datetime, date
 from dataclasses import dataclass
+from itertools import groupby
 from yaml import safe_load as load_yaml
 from typing import List
 
@@ -52,37 +53,46 @@ def get_args():
 
 def add_event_grid(ax, dates: List[date], values: List[float], events: List[Event]):
     sorted_events = list(sorted(events, key=lambda e: e.date))
-    shade = True
+    event_groups = groupby(sorted_events, key=lambda e: e.date.replace(day=1))
+
+    shade = False
     for start, end in zip(sorted_events, sorted_events[1:]):
-        if shade := not shade:
+        if shade:
             ax.fill_betweenx(values, start.date, end.date, color="grey", alpha=0.1)
+        shade = not shade
+    # do last bit of shade
+    if shade:
+        ax.fill_betweenx(values, sorted_events[-1].date, max(dates), color="grey", alpha=0.1)
 
     min_value = min(values)
     max_value = max(values)
     middle_value = (min_value + max_value) / 2
-    offset = (max_value - min_value) * 0.1
+    offset_amount = (max_value - min_value) * 0.1
 
-    for event in sorted_events:
-        value_at_date = date_to_value(dates, values, event.date)
-        if value_at_date < middle_value:
-            mid = (value_at_date + max_value) / 2
-        else:
-            mid = (min_value + value_at_date) / 2
+    for _date, events in event_groups:
+        offset = 0
+        for event in events:
+            value_at_date = date_to_value(dates, values, event.date)
+            if value_at_date < middle_value:
+                mid = (value_at_date + max_value) / 2
+            else:
+                mid = (min_value + value_at_date) / 2
 
-        if event.type == "house":
-            y = mid - offset
-        elif event.type == "job":
-            y = mid + offset
-        else:
-            y = mid
-        ax.text(
-            event.date,
-            y,
-            event.text,
-            rotation="vertical",
-            horizontalalignment="center",
-            verticalalignment="center",
-        )
+            if event.type == "house":
+                y = mid - offset_amount + offset
+            elif event.type == "job":
+                y = mid + offset_amount + offset
+            else:
+                y = mid + offset
+            ax.text(
+                event.date,
+                y,
+                event.text,
+                rotation="vertical",
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
+            offset += offset_amount
 
 
 def main(
