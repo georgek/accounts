@@ -67,27 +67,33 @@ def add_event_grid(ax, dates: List[date], values: List[float], events: List[Even
     min_value = min(values)
     max_value = max(values)
     middle_value = (min_value + max_value) / 2
-    offset_amount = (max_value - min_value) * 0.1
 
-    for _date, events in event_groups:
-        offset = 0
+    for group_date, events in event_groups:
+        value_at_date = date_to_value(dates, values, group_date)
+        if value_at_date < middle_value:
+            offset_amount = (max_value - min_value) * 0.15
+            mid = (value_at_date + max_value) / 2
+        else:
+            offset_amount = -(max_value - min_value) * 0.15
+            mid = (min_value + value_at_date) / 2
+
+        offset = -offset_amount
+
+        colours = {
+            "job": "blue",
+            "house": "green",
+            "misc": "red"
+        }
+
         for event in events:
-            value_at_date = date_to_value(dates, values, event.date)
-            if value_at_date < middle_value:
-                mid = (value_at_date + max_value) / 2
-            else:
-                mid = (min_value + value_at_date) / 2
-
-            if event.type == "house":
-                y = mid - offset_amount + offset
-            elif event.type == "job":
-                y = mid + offset_amount + offset
-            else:
-                y = mid + offset
+            y = mid + offset
+            colour = colours.get(event.type, "black")
             ax.text(
                 event.date,
                 y,
                 event.text,
+                color=colour,
+                alpha=0.6,
                 rotation="vertical",
                 horizontalalignment="center",
                 verticalalignment="center",
