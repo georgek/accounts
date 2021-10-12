@@ -10,6 +10,8 @@ from yaml import safe_load as load_yaml
 from typing import List
 
 import matplotlib.pyplot as plt
+from matplotlib import dates as mdates
+from matplotlib import ticker
 
 
 @dataclass
@@ -120,6 +122,19 @@ def main(
 
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
+
+    years = mdates.YearLocator()
+    months = mdates.MonthLocator()
+
+    ax.xaxis.set_major_locator(years)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.xaxis.set_minor_locator(months)
+
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(20000))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(2000))
+
+    ax.grid(which="major", alpha=.8)
+    ax.grid(which="minor", alpha=.3)
 
     events = parse_events(event_file) if event_file else []
     add_event_grid(ax, dates, values, events)
