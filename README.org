@@ -4,7 +4,7 @@
 #+EMAIL: kettleg@gmail.com
 
 Tools to help converting my various CSV outputs from bank accounts and credit
-cards into a ledger file.  There are (or will be) a few components:
+cards into a [[https://www.ledger-cli.org/][ledger]] file.  There are (or will be) a few components:
 - Sanitising the CSV files from the banks/credit cards I use,
 - Command-line interface for easily selecting the correct account for each
   transaction (for this I implemented something like ido-mode in Python),
