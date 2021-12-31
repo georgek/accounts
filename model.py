@@ -123,12 +123,17 @@ considered.
 
     all_accounts = set()
     payees, accounts = [], []
+    skip_section = False
 
     current_date = None
     for i, line in enumerate(ledger_file, 1):
         line = line[:-1]
-        if re.match(r"^\d", line):
+        if re.match(r"^~", line):
+            skip_section = True
+
+        elif re.match(r"^\d", line):
             # date/payee line
+            skip_section = False
             match = re.match(LEDGER_PAYEE_LINE, line)
             if match is None:
                 raise Exception(f"Bad payee line, line {i}.")
@@ -139,6 +144,9 @@ considered.
                 raise Exception(f"Bad date, line {i}.") from e
             current_payee = match.group(5)
             current_accounts = []
+
+        elif skip_section:
+            continue
 
         elif re.match(r"^\s", line):
             # account lines (only need to match the account name, no amounts)
