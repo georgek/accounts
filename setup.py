@@ -17,7 +17,6 @@ setup(
     ],
     scripts=[
         "scripts/convert-natwest",
-        "scripts/plot",
         "accounts",
     ],
 )
