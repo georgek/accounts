@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-ledger reg --invert -Jn -X £ -f ~/ledger/All.ledger ^Liabilities:StudentLoan | plot --ymin 0 -t "Student Loan"

@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-ledger reg -Jn -X £ -f ~/ledger/All.ledger ^Expenses:Petrol | plot -t "Petrol"
