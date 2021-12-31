@@ -24,9 +24,8 @@ Use ~accounts.py~. Only three parameters are required, the others are for
 using training data to enable prediction:
 
 #+BEGIN_SRC
-usage: accounts.py [-h] [-t TRAINING_DATA] [-n NEW_TRAINING_DATA_OUTPUT]
-                   [-c CURRENCY]
-                   csv_file account_name ledger_output
+usage: accounts [-h] [-t TRAINING_DATA] [-c CURRENCY] [-m LEDGER_MAXIMUM_AGE]
+                csv_file account_name ledger_output
 
 Makes ledger from CSV file semi-automatically. If training data is provided
 then a model is trained and used to predict classes.
@@ -40,29 +39,28 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -t TRAINING_DATA, --training_data TRAINING_DATA
-                        CSV file containing training data of form
-                        payee_string,account_name (default: None)
-  -n NEW_TRAINING_DATA_OUTPUT, --new_training_data_output NEW_TRAINING_DATA_OUTPUT
-                        File to write new training data generated during this
-                        session. (default: None)
+                        Ledger file to use for training data and accounts
+                        names. (default: None)
   -c CURRENCY, --currency CURRENCY
                         Currency symbol to use. (default: £)
+  -m LEDGER_MAXIMUM_AGE, --ledger-maximum-age LEDGER_MAXIMUM_AGE
+                        Maximum age, in days, of entries in ledger file to use
+                        for training. (default: 180)
 #+END_SRC
 
 For example:
 #+BEGIN_SRC bash
-  ./accounts.py -t accumulation/training/Current-201710.csv \
-                -n output/training/Current-201711.csv \
-                ~/bank/natwest-current/Current-20180503-split/Current-201711.csv \
-                Assets:Natwest:Current \
-                output/ledger/Current-201711.ledger
+  ./accounts.py -t All.ledger \
+                Current-201711.csv \
+                Assets:Bank:Current \
+                Current-201711.ledger
 #+END_SRC
 
 * Testing the model
 Run ~model.py~ to show how the model performs on a 3-fold validation test, for
 example:
 #+BEGIN_SRC bash
-  ./model.py accumulation/training/Current-201711.csv
+  ./model.py All.ledger
 #+END_SRC
 
 * Todo
