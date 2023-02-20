@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from collections import namedtuple, deque

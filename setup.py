@@ -9,14 +9,16 @@ setup(
     python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
     install_requires=[
-        "numpy~=1.13.0",
+        "numpy",
         "scikit-learn",
         "colored",
         "curtsies",
         "python-dateutil",
     ],
-    scripts=[
-        "scripts/convert-natwest",
-        "accounts",
-    ],
+    entry_points={
+        "console_scripts": [
+            "accounts=accounts.cli:main",
+            "model=accounts.model:main",
+        ],
+    },
 )

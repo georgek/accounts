@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import sys
 import argparse
 import csv
@@ -9,9 +7,9 @@ from datetime import datetime, timedelta
 
 import dateutil.parser
 
-import model
-from hierarchy import StringHierarchy
-from pydo import pydo_input
+from accounts import model
+from accounts.hierarchy import StringHierarchy
+from accounts.pydo import pydo_input
 
 HISTORY_SIZE = 100
 
@@ -78,7 +76,7 @@ def format_transaction(date, payee, account_in, account_out, amount, currency):
     return s
 
 
-def main(csv_file,
+def run(csv_file,
          account_name,
          ledger_output,
          training_data=None,
@@ -135,6 +133,6 @@ def main(csv_file,
     print("Bye.")
 
 
-if __name__ == '__main__':
+def main():
     args = get_args()
-    main(**vars(args))
+    run(**vars(args))

@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-
 from curtsies import Input, CursorAwareWindow, fmtstr
 from curtsies.fmtfuncs import yellow, bold
 
-from editor import Editor, Completion
+from accounts.editor import Editor, Completion
 
 
 def narrow_completions(typed, nodes):

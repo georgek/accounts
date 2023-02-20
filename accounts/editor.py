@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import itertools
 from collections import deque, namedtuple
 from curtsies import fsarray, fmtstr

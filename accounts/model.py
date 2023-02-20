@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Model for predicting account name based on payee string. When run the
 module does a K-fold validation to test the model.
 
@@ -178,7 +176,7 @@ models."""
     return X, y, target_names
 
 
-def main(training_data,
+def run(training_data,
          account_name,
          ledger_maximum_age=DEFAULT_LEDGER_MAXIMUM_AGE):
     begin_date = datetime.today() - timedelta(days=ledger_maximum_age)
@@ -202,6 +200,6 @@ def main(training_data,
     print(classification_report(y, pred, target_names=target_names))
 
 
-if __name__ == '__main__':
+def main():
     args = get_args()
-    main(**vars(args))
+    run(**vars(args))
